@@ -4,27 +4,49 @@ module Main where
 
 import Control.Monad.Reader
 import Data.List (sortOn)
+import qualified Data.Map as Map
+import Data.Map (Map)
 import Data.Monoid ((<>))
 import Data.Text (Text, unpack)
 import qualified Data.Text.IO as T
 import qualified Data.Vector as V
 import Text.Printf (printf)
+import System.Environment (getArgs, getProgName)
 
 import qualified GitHub.Endpoints.Issues as GitHub
 import GitHub.Data.Name (Name(N))
 
 mcubootQuery :: Context
 mcubootQuery = Context "d3zd3z" "runtimeco" "mcuboot"
+    "The MCUboot bootloader project"
 
 zephyrQuery :: Context
 zephyrQuery = Context "d3zd3z" "zephyrproject-rtos" "zephyr"
+    "The Zephyr RTOS project"
 
 type QueryIO a = ReaderT Context IO a
 
 main :: IO ()
 main = do
-   runReaderT askGitHub mcubootQuery
-   runReaderT askGitHub zephyrQuery
+    args <- getArgs
+    case args of
+        [name] -> do
+            case Map.lookup name contextMap of
+                Nothing -> usage
+                Just ctx -> runReaderT askGitHub ctx
+        _ -> usage
+
+contextMap :: Map String Context
+contextMap = Map.fromList [("mcuboot", mcubootQuery), ("zephyr", zephyrQuery)]
+
+usage :: IO ()
+usage = do
+    pname <- getProgName
+    putStrLn $ "Usage: " ++ pname ++ " [project]"
+    putStrLn ""
+    putStrLn "Projects:"
+    forM_ (Map.assocs contextMap) $ \(key, ctx) -> do
+        printf "  %-10s %s\n" key (queryHelp ctx)
 
 askGitHub :: QueryIO ()
 askGitHub = do
@@ -37,14 +59,15 @@ askGitHub = do
          GitHub.IssueRepoMod $ \o -> o {
             GitHub.issueRepoOptionsAssignee = GitHub.FilterBy (N user),
             GitHub.issueRepoOptionsState = Nothing }
-   lift $ T.putStrLn $ "Issues at [https://github.com/" <> owner <> "/" <> user <> "/issues\n"
+   lift $ T.putStrLn $ "Issues at [https://github.com/" <> owner <> "/" <> user <> "/issues]\n"
    lift $ putStrLn $ header
    lift $ putStrLn $ foldMap ((<> "\n") . formatIssue) $ sortOn GitHub.issueNumber $ V.toList issues
 
 data Context = Context {
    queryUser :: Text,
    queryOwner :: Text,
-   queryProject :: Text }
+   queryProject :: Text,
+   queryHelp :: String }
    deriving Show
 
 -- Turn an error into a user exception and throw it.

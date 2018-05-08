@@ -39,6 +39,7 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - gitissue
+    - containers >= 0.5 && < 0.6
 
 tests:
   gitissue-test:
