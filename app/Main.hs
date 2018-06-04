@@ -6,6 +6,7 @@ import Control.Monad.Reader
 import Data.List (sortOn)
 import qualified Data.Map as Map
 import Data.Map (Map)
+import Data.Maybe (fromJust)
 import Data.Monoid ((<>))
 import Data.Text (Text, unpack)
 import qualified Data.Text.IO as T
@@ -86,7 +87,7 @@ formatIssue :: GitHub.Issue -> String
 formatIssue issue =
    let state = colorize $ GitHub.issueState issue in
    let number = GitHub.issueNumber issue in
-   let url = unpack $ GitHub.getUrl $ GitHub.issueUrl issue in
+   let url = unpack $ GitHub.getUrl $ fromJust $ GitHub.issueHtmlUrl issue in
    let title = jiraEscape $ unpack $ GitHub.issueTitle issue in
    let milestone = maybe " " id $ fmap GitHub.milestoneTitle $ GitHub.issueMilestone issue in
    printf "|[%d|%s]|%s|%s|%s|"
