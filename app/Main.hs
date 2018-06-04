@@ -59,7 +59,9 @@ askGitHub = do
          GitHub.IssueRepoMod $ \o -> o {
             GitHub.issueRepoOptionsAssignee = GitHub.FilterBy (N user),
             GitHub.issueRepoOptionsState = Nothing }
-   lift $ T.putStrLn $ "Issues at [https://github.com/" <> owner <> "/" <> user <> "/issues]\n"
+   lift $ T.putStrLn $
+      "Issues at [https://github.com/" <> owner <> "/" <> project <> "/issues?q=assignee:" <>
+         user <> "]\n"
    lift $ putStrLn $ header
    lift $ putStrLn $ foldMap ((<> "\n") . formatIssue) $ sortOn GitHub.issueNumber $ V.toList issues
 
